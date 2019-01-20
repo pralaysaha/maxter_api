@@ -14,6 +14,7 @@ router.post('/signup', (req, res, next) => {
   user.picture = user.gravatar();
 
   User.findOne({ email: req.body.email }, (err, existingUser) => {
+    if (err) throw err;
     if (existingUser) {
       res.json({
         success: false,
@@ -30,6 +31,34 @@ router.post('/signup', (req, res, next) => {
         success: true,
         message: 'JWT Token is generated',
         token: token
+      });
+    }
+  });
+});
+
+router.post('/login', (req, res, next) => {
+  User.findOne({ email: req.body.email }, (err, user) => {
+    if (err) throw err;
+    if (user) {
+      if (user.comparePassword(req.body.password)) {
+        var token = jwt.sign({ user: user }, config.secretKey, {
+          expiresIn: '7d'
+        });
+        res.json({
+          success: true,
+          message: 'JWT Token is generated',
+          token: token
+        });
+      } else {
+        res.json({
+          success: false,
+          message: 'Authentication failed.  Wrong Password'
+        });
+      }
+    } else {
+      res.json({
+        success: false,
+        message: 'Authentication failed. User not found'
       });
     }
   });
